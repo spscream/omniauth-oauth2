@@ -74,6 +74,12 @@ module OmniAuth
         else
           self.access_token = build_access_token
           self.access_token = access_token.refresh! if access_token.expired?
+          
+          # Validate that the token belong to the application
+          app_raw = self.access_token.get('/app').parsed
+          if app_raw["id"] != options.client_id.to_s
+            raise ArgumentError.new("Access token doesn't belong to the client.")
+          end
           super
         end
       rescue ::OAuth2::Error, CallbackError => e
@@ -99,12 +105,6 @@ module OmniAuth
               client,
               hash
           )
-
-          # Validate that the token belong to the application
-          app_raw = self.access_token.get('/app').parsed
-          if app_raw["id"] != options.client_id.to_s
-            raise ArgumentError.new("Access token doesn't belong to the client.")
-          end
         end
       end
 
