@@ -89,8 +89,23 @@ module OmniAuth
     protected
 
       def build_access_token
-        verifier = request.params['code']
-        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
+        if request.params.key?('code')
+          verifier = request.params['code']
+          client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
+        elsif request.params.key?('access_token')
+          hash = request.params.slice('access_token', 'expires_at', 'expires_in', 'refresh_token')
+          hash.update(options.access_token_options)
+          ::OAuth2::AccessToken.from_hash(
+              client,
+              hash
+          )
+
+          # Validate that the token belong to the application
+          app_raw = self.access_token.get('/app').parsed
+          if app_raw["id"] != options.client_id.to_s
+            raise ArgumentError.new("Access token doesn't belong to the client.")
+          end
+        end
       end
 
       def deep_symbolize(options)
