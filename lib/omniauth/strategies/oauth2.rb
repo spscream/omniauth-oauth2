@@ -28,6 +28,11 @@ module OmniAuth
       option :auth_token_params, {}
       option :provider_ignores_state, false
 
+      option :access_token_options, {
+          :header_format => 'OAuth %s',
+          :param_name => 'access_token'
+      }
+
       attr_accessor :access_token
 
       def client
